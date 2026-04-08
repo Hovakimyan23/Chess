@@ -1,23 +1,247 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Trainer</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматная доска</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .controls label {
+            color: #fff;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        .controls select {
+            padding: 8px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 4px solid #8b4513;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .square {
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .square.white {
+            background-color: #f0d9b5;
+        }
+
+        .square.black {
+            background-color: #b58863;
+        }
+
+        .square:hover {
+            opacity: 0.8;
+        }
+
+        .square.highlight {
+            background-color: #7fff7f !important;
+            box-shadow: inset 0 0 10px rgba(0, 128, 0, 0.5);
+        }
+
+        .square.selected {
+            background-color: #ffff00 !important;
+            box-shadow: inset 0 0 15px rgba(255, 200, 0, 0.8);
+        }
+    </style>
 </head>
 <body>
-  <h1>Chess Trainer</h1>
+    <div class="controls">
+        <label for="pieceSelect">Выберите фигуру:</label>
+        <select id="pieceSelect">
+            <option value="knight">♞ Конь</option>
+            <option value="rook">♜ Ладья</option>
+        </select>
+    </div>
+    <div id="board"></div>
 
-  <div id="controls">
-    <label>Choose Figure:</label>
-    <select id="pieceSelect">
-      <option value="knight">knight</option>
-    </select>
-  </div>
+    <script>
 
-  <div id="board"></div>
+        document.addEventListener("DOMContentLoaded", function() {
 
-  <script src="js/script.js"></script>
+            const board = document.getElementById("board");
+            let selectedPiece = "knight";
+
+
+            if (!board) {
+                console.error("Элемент board не найден!");
+                return;
+            }
+
+
+            const pieceSelect = document.getElementById("pieceSelect");
+            if (pieceSelect) {
+                pieceSelect.addEventListener("change", function(e) {
+                    selectedPiece = e.target.value;
+                    clearHighlights();
+                });
+            }
+
+
+            function createBoard() {
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const square = document.createElement("div");
+                        square.classList.add("square");
+
+                        if ((row + col) % 2 === 0) {
+                            square.classList.add("white");
+                        } else {
+                            square.classList.add("black");
+                        }
+
+                        square.dataset.row = row;
+                        square.dataset.col = col;
+                        board.appendChild(square);
+                    }
+                }
+                console.log("Доска создана! Клеток: " + board.children.length);
+            }
+
+
+            function clearHighlights() {
+                document.querySelectorAll(".highlight").forEach(function(sq) {
+                    sq.classList.remove("highlight");
+                });
+                document.querySelectorAll(".selected").forEach(function(sq) {
+                    sq.classList.remove("selected");
+                });
+            }
+
+
+            function getSquare(row, col) {
+                return document.querySelector("[data-row='" + row + "'][data-col='" + col + "']");
+            }
+
+
+            function isValidPosition(row, col) {
+                return row >= 0 && row < 8 && col >= 0 && col < 8;
+            }
+
+
+            function getKnightMoves(row, col) {
+                const offsets = [
+                    [-2, -1], [-2, 1],
+                    [-1, -2], [-1, 2],
+                    [1, -2], [1, 2],
+                    [2, -1], [2, 1]
+                ];
+
+                const moves = [];
+                for (let i = 0; i < offsets.length; i++) {
+                    const newRow = row + offsets[i][0];
+                    const newCol = col + offsets[i][1];
+                    if (isValidPosition(newRow, newCol)) {
+                        moves.push([newRow, newCol]);
+                    }
+                }
+                return moves;
+            }
+
+
+            function getRookMoves(row, col) {
+                const moves = [];
+
+
+                for (let r = row - 1; r >= 0; r--) {
+                    moves.push([r, col]);
+                }
+
+                for (let r = row + 1; r < 8; r++) {
+                    moves.push([r, col]);
+                }
+
+                for (let c = col - 1; c >= 0; c--) {
+                    moves.push([row, c]);
+                }
+
+                for (let c = col + 1; c < 8; c++) {
+                    moves.push([row, c]);
+                }
+
+                return moves;
+            }
+
+            function getMoves(piece, row, col) {
+                if (piece === "knight") {
+                    return getKnightMoves(row, col);
+                } else if (piece === "rook") {
+                    return getRookMoves(row, col);
+                }
+                return [];
+            }
+
+            function highlightMoves(moves) {
+                for (let i = 0; i < moves.length; i++) {
+                    const square = getSquare(moves[i][0], moves[i][1]);
+                    if (square) {
+                        square.classList.add("highlight");
+                    }
+                }
+            }
+
+            board.addEventListener("click", function(e) {
+                if (!e.target.classList.contains("square")) {
+                    return;
+                }
+
+                clearHighlights();
+
+                const row = parseInt(e.target.dataset.row, 10);
+                const col = parseInt(e.target.dataset.col, 10);
+
+                if (isNaN(row) || isNaN(col)) {
+                    return;
+                }
+
+
+                e.target.classList.add("selected");
+
+
+                const moves = getMoves(selectedPiece, row, col);
+                highlightMoves(moves);
+            });
+
+
+            createBoard();
+        });
+    </script>
 </body>
 </html>
