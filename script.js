@@ -1,56 +1,131 @@
-const board = document.getElementById("board");
-let selectedPiece = "knight";
+document.addEventListener("DOMContentLoaded", function () {
+    const board = document.getElementById("board");
+    let selectedPiece = "knight";
 
-document.getElementById("pieceSelect").addEventListener("change", (e) => {
-  selectedPiece = e.target.value;
-});
-
-// deck
-for (let row = 0; row < 8; row++) {
-  for (let col = 0; col < 8; col++) {
-    const square = document.createElement("div");
-    square.classList.add("square");
-    if ((row + col) % 2 === 0) {
-      square.classList.add("white");
-    } else {
-      square.classList.add("black");
+    if (!board) {
+        console.error("Элемент board не найден!");
+        return;
     }
-    square.dataset.row = row;
-    square.dataset.col = col;
-    board.appendChild(square);
-  }
-}
 
-// moves for knight
-function getKnightMoves(row, col) {
-  const moves = [
-    [row - 2, col - 1],
-    [row - 2, col + 1],
-    [row - 1, col - 2],
-    [row - 1, col + 2],
-    [row + 1, col - 2],
-    [row + 1, col + 2],
-    [row + 2, col - 1],
-    [row + 2, col + 1],
-  ];
-  return moves.filter(([r, c]) => r >= 0 && r < 8 && c >= 0 && c < 8);
-}
+    const pieceSelect = document.getElementById("pieceSelect");
+    if (pieceSelect) {
+        pieceSelect.addEventListener("change", function (e) {
+            selectedPiece = e.target.value;
+            clearHighlights();
+        });
+    }
 
-// direction
-board.addEventListener("click", (e) => {
-  if (!e.target.classList.contains("square")) return;
+    function createBoard() {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const square = document.createElement("div");
+                square.classList.add("square");
 
-  // highlighter
-  document.querySelectorAll(".highlight").forEach(sq => sq.classList.remove("highlight"));
+                if ((row + col) % 2 === 0) {
+                    square.classList.add("white");
+                } else {
+                    square.classList.add("black");
+                }
 
-  const row = parseInt(e.target.dataset.row);
-  const col = parseInt(e.target.dataset.col);
+                square.dataset.row = row;
+                square.dataset.col = col;
+                board.appendChild(square);
+            }
+        }
+    }
 
-  if (selectedPiece === "knight") {
-    const moves = getKnightMoves(row, col);
-    moves.forEach(([r, c]) => {
-      const square = document.querySelector(`[data-row='${r}'][data-col='${c}']`);
-      square.classList.add("highlight");
+    function clearHighlights() {
+        document.querySelectorAll(".highlight").forEach(function (sq) {
+            sq.classList.remove("highlight");
+        });
+        document.querySelectorAll(".selected").forEach(function (sq) {
+            sq.classList.remove("selected");
+        });
+    }
+
+    function getSquare(row, col) {
+        return document.querySelector("[data-row='" + row + "'][data-col='" + col + "']");
+    }
+
+    function isValidPosition(row, col) {
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+    function getKnightMoves(row, col) {
+        const offsets = [
+            [-2, -1], [-2, 1],
+            [-1, -2], [-1, 2],
+            [1, -2], [1, 2],
+            [2, -1], [2, 1]
+        ];
+
+        const moves = [];
+        for (let i = 0; i < offsets.length; i++) {
+            const newRow = row + offsets[i][0];
+            const newCol = col + offsets[i][1];
+            if (isValidPosition(newRow, newCol)) {
+                moves.push([newRow, newCol]);
+            }
+        }
+        return moves;
+    }
+
+    function getRookMoves(row, col) {
+        const moves = [];
+
+        for (let r = row - 1; r >= 0; r--) {
+            moves.push([r, col]);
+        }
+        for (let r = row + 1; r < 8; r++) {
+            moves.push([r, col]);
+        }
+        for (let c = col - 1; c >= 0; c--) {
+            moves.push([row, c]);
+        }
+        for (let c = col + 1; c < 8; c++) {
+            moves.push([row, c]);
+        }
+
+        return moves;
+    }
+
+    function getMoves(piece, row, col) {
+        if (piece === "knight") {
+            return getKnightMoves(row, col);
+        } else if (piece === "rook") {
+            return getRookMoves(row, col);
+        }
+        return [];
+    }
+
+    function highlightMoves(moves) {
+        for (let i = 0; i < moves.length; i++) {
+            const square = getSquare(moves[i][0], moves[i][1]);
+            if (square) {
+                square.classList.add("highlight");
+            }
+        }
+    }
+
+    board.addEventListener("click", function (e) {
+        if (!e.target.classList.contains("square")) {
+            return;
+        }
+
+        clearHighlights();
+
+        const row = parseInt(e.target.dataset.row, 10);
+        const col = parseInt(e.target.dataset.col, 10);
+
+        if (isNaN(row) || isNaN(col)) {
+            return;
+        }
+
+        e.target.classList.add("selected");
+
+        const moves = getMoves(selectedPiece, row, col);
+        highlightMoves(moves);
     });
-  }
+
+    createBoard();
 });
