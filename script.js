@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const board = document.getElementById("board");
-    let selectedPiece = "knight";
+    let selectedPiece = "king";
 
     if (!board) {
         console.error("Элемент board не найден!");
@@ -89,11 +89,84 @@ document.addEventListener("DOMContentLoaded", function () {
         return moves;
     }
 
+    function getBishopMoves(row, col) {
+        const moves = [];
+
+        for (let i = 1; row - i >= 0 && col - i >= 0; i++) {
+            moves.push([row - i, col - i]);
+        }
+        for (let i = 1; row - i >= 0 && col + i < 8; i++) {
+            moves.push([row - i, col + i]);
+        }
+        for (let i = 1; row + i < 8 && col - i >= 0; i++) {
+            moves.push([row + i, col - i]);
+        }
+        for (let i = 1; row + i < 8 && col + i < 8; i++) {
+            moves.push([row + i, col + i]);
+        }
+
+        return moves;
+    }
+
+    function getQueenMoves(row, col) {
+        return getRookMoves(row, col).concat(getBishopMoves(row, col));
+    }
+
+    function getKingMoves(row, col) {
+        const offsets = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1], [0, 1],
+            [1, -1], [1, 0], [1, 1]
+        ];
+
+        const moves = [];
+        for (let i = 0; i < offsets.length; i++) {
+            const newRow = row + offsets[i][0];
+            const newCol = col + offsets[i][1];
+            if (isValidPosition(newRow, newCol)) {
+                moves.push([newRow, newCol]);
+            }
+        }
+        return moves;
+    }
+
+    function getPawnMoves(row, col) {
+        const moves = [];
+
+        // Forward one square (white pawns move up the board, row decreasing)
+        if (isValidPosition(row - 1, col)) {
+            moves.push([row - 1, col]);
+        }
+
+        // Forward two squares from starting rank (row 6 for white)
+        if (row === 6 && isValidPosition(row - 2, col)) {
+            moves.push([row - 2, col]);
+        }
+
+        // Diagonal captures
+        if (isValidPosition(row - 1, col - 1)) {
+            moves.push([row - 1, col - 1]);
+        }
+        if (isValidPosition(row - 1, col + 1)) {
+            moves.push([row - 1, col + 1]);
+        }
+
+        return moves;
+    }
+
     function getMoves(piece, row, col) {
         if (piece === "knight") {
             return getKnightMoves(row, col);
         } else if (piece === "rook") {
             return getRookMoves(row, col);
+        } else if (piece === "bishop") {
+            return getBishopMoves(row, col);
+        } else if (piece === "queen") {
+            return getQueenMoves(row, col);
+        } else if (piece === "king") {
+            return getKingMoves(row, col);
+        } else if (piece === "pawn") {
+            return getPawnMoves(row, col);
         }
         return [];
     }
